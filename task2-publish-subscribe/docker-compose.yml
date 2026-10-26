@@ -1,0 +1,55 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-task2
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  publisher:
+    build: ./publisher
+    container_name: task2-publisher
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python publisher.py
+
+  accounting_subscriber:
+    build: ./subscriber
+    container_name: task2-accounting
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - DEPARTMENT_NAME=Бухгалтерия
+      - PYTHONUNBUFFERED=1
+    command: python subscriber.py
+
+  oil_depot_subscriber:
+    build: ./subscriber
+    container_name: task2-oil-depot
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - DEPARTMENT_NAME=Нефтебаза
+      - PYTHONUNBUFFERED=1
+    command: python subscriber.py
+
+  analytics_subscriber:
+    build: ./subscriber
+    container_name: task2-analytics
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - DEPARTMENT_NAME=Аналитический_отдел
+      - PYTHONUNBUFFERED=1
+    command: python subscriber.py

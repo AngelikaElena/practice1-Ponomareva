@@ -1,0 +1,54 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-task1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  producer:
+    build: ./producer
+    container_name: task1-producer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python producer.py
+
+  consumer1:
+    build: ./consumer
+    container_name: task1-consumer1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - BRIGADE_NAME=Бригада-1
+      - PYTHONUNBUFFERED=1
+    command: python consumer.py
+
+  consumer2:
+    build: ./consumer
+    container_name: task1-consumer2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - BRIGADE_NAME=Бригада-2
+      - PYTHONUNBUFFERED=1
+    command: python consumer.py
+
+  dispatcher:
+    build: ./dispatcher
+    container_name: task1-dispatcher
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python dispatcher.py
