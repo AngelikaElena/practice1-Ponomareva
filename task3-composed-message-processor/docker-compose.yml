@@ -1,0 +1,75 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-task3
+    ports:
+      - "5674:5672"     # Свободный порт, чтобы не конфликтовать с другими задачами
+      - "15674:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  processor:
+    build: ./processor
+    container_name: task3-processor
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python processor.py
+
+  initiator:
+    build: ./initiator
+    container_name: task3-initiator
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python initiator.py
+
+  worker_drilling:
+    build: ./worker
+    container_name: task3-worker-drilling
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - WORK_TYPE=drilling
+      - PYTHONUNBUFFERED=1
+    command: python worker.py
+
+  worker_electrical:
+    build: ./worker
+    container_name: task3-worker-electrical
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - WORK_TYPE=electrical
+      - PYTHONUNBUFFERED=1
+    command: python worker.py
+
+  worker_logistics:
+    build: ./worker
+    container_name: task3-worker-logistics
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - WORK_TYPE=logistics
+      - PYTHONUNBUFFERED=1
+    command: python worker.py
+
+  aggregator:
+    build: ./aggregator
+    container_name: task3-aggregator
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python aggregator.py
